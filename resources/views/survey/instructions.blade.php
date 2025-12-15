@@ -10,7 +10,10 @@
         There are no right or wrong answers — just be honest with how you feel.
     </p>
 
-    <a href="{{ route('survey.question', ['step' => 1]) }}"
+    @php
+        $startEncoded = bin2hex(\Illuminate\Support\Facades\Crypt::encryptString(1));
+    @endphp
+    <a href="{{ route('survey.question', ['step' => $startEncoded]) }}"
        class="block w-full bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 transition mb-3">
         Start Survey
     </a>
