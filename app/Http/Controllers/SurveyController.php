@@ -8,8 +8,11 @@ use App\Models\Answer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+use Illuminate\Support\Facades\Crypt;
+
 class SurveyController extends Controller
 {
+    // Halaman awal survei
     // Halaman awal survei
     public function welcome()
     {
@@ -21,18 +24,17 @@ class SurveyController extends Controller
                 'question' => (object)['text' => 'Belum ada pertanyaan tersedia.'],
                 'number' => 1,
                 'total' => 1,
-                'options' => ['-']
             ]);
         }
 
         $question = $questions[0];
         $number = 1;
-        $options = ['Tidak Pernah', 'Jarang', 'Sering', 'Selalu'];
 
         // Kosongkan session jawaban setiap kali mulai survei baru
         session()->forget('survey_answers');
+        session()->forget('answers'); // Make sure we clear both keys if any
 
-        return view('survey.welcome', compact('question', 'number', 'total', 'options'));
+        return view('survey.welcome', compact('question', 'number', 'total'));
     }
 
     // Petunjuk survei
@@ -42,8 +44,15 @@ class SurveyController extends Controller
     }
 
     // Tampilkan pertanyaan per step
-    public function showQuestion($step)
+    public function showQuestion($step_encrypted)
     {
+        try {
+            $step = Crypt::decryptString(hex2bin($step_encrypted));
+            $step = (int) $step;
+        } catch (\Exception $e) {
+            return redirect()->route('survey.welcome');
+        }
+
         $questions = Question::orderBy('id')->get();
         $total = $questions->count();
 
@@ -51,17 +60,19 @@ class SurveyController extends Controller
             return redirect()->route('survey.welcome')->with('error', 'Belum ada pertanyaan.');
         }
 
-        $step = (int) $step;
         if ($step < 1 || $step > $total) {
             return redirect()->route('survey.thanks');
         }
 
         $question = $questions[$step - 1];
-        $options = ['Tidak Pernah', 'Jarang', 'Sering', 'Selalu'];
+        $options = $question->options ?? []; // Ambil dari database, default array kosong
 
-        // Ambil jawaban sementara dari session (jika user balik ke pertanyaan sebelumnya)
-        $savedAnswers = session('survey_answers', []);
+        // Ambil jawaban sementara dari session
+        $savedAnswers = session('answers', []);
         $currentAnswer = $savedAnswers[$question->id] ?? null;
+
+        // Prepare previous step encrypted if needed
+        $prevStepEncrypted = ($step > 1) ? bin2hex(Crypt::encryptString($step - 1)) : null;
 
         return view('survey.question', [
             'question' => $question,
@@ -69,60 +80,78 @@ class SurveyController extends Controller
             'total'    => $total,
             'options'  => $options,
             'currentAnswer' => $currentAnswer,
+            'currentStepEncrypted' => $step_encrypted,
+            'prevStepEncrypted' => $prevStepEncrypted,
         ]);
     }
 
     // Simpan jawaban sementara (belum ke DB)
-    public function saveTempAnswer(Request $request, $step)
-{
-    $request->validate([
-        'answer' => 'required|string',
-    ]);
+    public function saveTempAnswer(Request $request, $step_encrypted)
+    {
+        try {
+            $step = Crypt::decryptString(hex2bin($step_encrypted));
+            $step = (int) $step;
+        } catch (\Exception $e) {
+            return redirect()->route('survey.welcome');
+        }
 
-    $questions = \App\Models\Question::orderBy('id')->get();
-    $total = $questions->count();
-
-    $question = $questions[$step - 1];
-    session()->put("answers.{$question->id}", $request->answer);
-
-    // Kalau pertanyaan terakhir, langsung simpan semua
-    if ($step == $total) {
-    // panggil langsung storeAll() tanpa lewat route GET
-    return app()->call([$this, 'storeAll'], ['request' => $request]);
-}
-
-    // Kalau belum terakhir, lanjut ke pertanyaan berikutnya
-    return redirect()->route('survey.question', ['step' => $step + 1]);
-}
-
-public function storeAll(Request $request)
-{
-    $answers = session('answers', []);
-
-    if (empty($answers)) {
-        return redirect()->route('survey.welcome')->with('error', 'Tidak ada jawaban untuk disimpan.');
-    }
-
-    // Buat response baru
-    $response = \App\Models\Response::create([
-        'respondent_code' => uniqid('resp_'),
-    ]);
-
-    // Simpan semua jawaban ke DB
-    foreach ($answers as $question_id => $answer) {
-        \App\Models\Answer::create([
-            'response_id' => $response->id,
-            'question_id' => $question_id,
-            'answer' => $answer,
+        $request->validate([
+            'answer' => 'required', // Bisa string atau array (checkbox)
         ]);
+
+        $questions = \App\Models\Question::orderBy('id')->get();
+        $total = $questions->count();
+
+        $question = $questions[$step - 1];
+        
+        $answerValue = $request->answer;
+        
+        // Jika array (checkbox), gabungkan jadi string koma
+        if (is_array($answerValue)) {
+            $answerValue = implode(', ', $answerValue);
+        }
+
+        // Simpan ke session (format: question_id => answer)
+        session()->put("answers.{$question->id}", $answerValue);
+
+        // Kalau pertanyaan terakhir, langsung simpan semua
+        if ($step == $total) {
+            return app()->call([$this, 'storeAll'], ['request' => $request]);
+        }
+
+        // Kalau belum terakhir, lanjut ke pertanyaan berikutnya
+        $nextStepEncrypted = bin2hex(Crypt::encryptString($step + 1));
+        return redirect()->route('survey.question', ['step' => $nextStepEncrypted]);
     }
 
-    // Hapus session setelah selesai
-    session()->forget('answers');
-    return redirect()->route('survey.thanks');
-}
+    public function storeAll(Request $request)
+    {
+        $answers = session('answers', []);
 
-public function thanks()
+        if (empty($answers)) {
+            return redirect()->route('survey.welcome')->with('error', 'Tidak ada jawaban untuk disimpan.');
+        }
+
+        // Buat response baru
+        $response = \App\Models\Response::create([
+            'respondent_code' => uniqid('resp_'),
+        ]);
+
+        // Simpan semua jawaban ke DB
+        foreach ($answers as $question_id => $answer) {
+            \App\Models\Answer::create([
+                'response_id' => $response->id,
+                'question_id' => $question_id,
+                'answer' => (string) $answer,
+            ]);
+        }
+
+        // Hapus session setelah selesai
+        session()->forget('answers');
+        return redirect()->route('survey.thanks');
+    }
+
+    public function thanks()
     {
         return view('survey.thanks');
     }
