@@ -5,14 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Question;
 use App\Models\Response;
 use App\Models\Answer;
+use App\Models\Faculty;
+use App\Models\Prodi;
+use App\Models\Degree;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
 use Illuminate\Support\Facades\Crypt;
 
 class SurveyController extends Controller
 {
-    // Halaman awal survei
     // Halaman awal survei
     public function welcome()
     {
@@ -67,6 +68,37 @@ class SurveyController extends Controller
         $question = $questions[$step - 1];
         $options = $question->options ?? []; // Ambil dari database, default array kosong
 
+        // Dynamic Options Loading
+        if ($question->key === 'faculty') {
+            $options = Faculty::pluck('name')->toArray();
+        } 
+        elseif ($question->key === 'prodi') {
+            // Find the faculty question answer from session
+            $facultyQuestion = Question::where('key', 'faculty')->first();
+            if ($facultyQuestion) {
+                 $selectedFacultyName = session("answers.{$facultyQuestion->id}");
+                 if ($selectedFacultyName) {
+                     $faculty = Faculty::where('name', $selectedFacultyName)->first();
+                     if ($faculty) {
+                         $options = $faculty->prodis()->pluck('name')->toArray();
+                     }
+                 }
+            }
+        }
+        elseif ($question->key === 'degree') {
+             // Find the prodi question answer
+             $prodiQuestion = Question::where('key', 'prodi')->first();
+             if ($prodiQuestion) {
+                 $selectedProdiName = session("answers.{$prodiQuestion->id}");
+                 if ($selectedProdiName) {
+                     $prodi = Prodi::where('name', $selectedProdiName)->first();
+                     if ($prodi) {
+                         $options = $prodi->degrees()->pluck('name')->toArray();
+                     }
+                 }
+             }
+        }
+
         // Ambil jawaban sementara dari session
         $savedAnswers = session('answers', []);
         $currentAnswer = $savedAnswers[$question->id] ?? null;
@@ -99,7 +131,7 @@ class SurveyController extends Controller
             'answer' => 'required', // Bisa string atau array (checkbox)
         ]);
 
-        $questions = \App\Models\Question::orderBy('id')->get();
+        $questions = Question::orderBy('id')->get();
         $total = $questions->count();
 
         $question = $questions[$step - 1];
@@ -133,13 +165,13 @@ class SurveyController extends Controller
         }
 
         // Buat response baru
-        $response = \App\Models\Response::create([
+        $response = Response::create([
             'respondent_code' => uniqid('resp_'),
         ]);
 
         // Simpan semua jawaban ke DB
         foreach ($answers as $question_id => $answer) {
-            \App\Models\Answer::create([
+            Answer::create([
                 'response_id' => $response->id,
                 'question_id' => $question_id,
                 'answer' => (string) $answer,

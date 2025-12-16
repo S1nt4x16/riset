@@ -21,6 +21,9 @@ class DatabaseSeeder extends Seeder
             'is_admin' => true,
         ]);
 
-        $this->call(QuestionSeeder::class);
+        $this->call([
+            AcademicSeeder::class,
+            QuestionSeeder::class,
+        ]);
     }
 }
