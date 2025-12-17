@@ -72,7 +72,7 @@ class SurveyController extends Controller
         if ($question->key === 'faculty') {
             $options = Faculty::pluck('name')->toArray();
         } 
-        elseif ($question->key === 'prodi') {
+        elseif ($question->key === 'prodi_degree') { // Combined Key
             // Find the faculty question answer from session
             $facultyQuestion = Question::where('key', 'faculty')->first();
             if ($facultyQuestion) {
@@ -80,23 +80,17 @@ class SurveyController extends Controller
                  if ($selectedFacultyName) {
                      $faculty = Faculty::where('name', $selectedFacultyName)->first();
                      if ($faculty) {
-                         $options = $faculty->prodis()->pluck('name')->toArray();
+                         // Build "ProdiName (DegreeName)" list
+                         $options = [];
+                         $prodis = $faculty->prodis()->with('degrees')->get();
+                         foreach ($prodis as $prodi) {
+                             foreach ($prodi->degrees as $degree) {
+                                 $options[] = "{$prodi->name} ({$degree->name})";
+                             }
+                         }
                      }
                  }
             }
-        }
-        elseif ($question->key === 'degree') {
-             // Find the prodi question answer
-             $prodiQuestion = Question::where('key', 'prodi')->first();
-             if ($prodiQuestion) {
-                 $selectedProdiName = session("answers.{$prodiQuestion->id}");
-                 if ($selectedProdiName) {
-                     $prodi = Prodi::where('name', $selectedProdiName)->first();
-                     if ($prodi) {
-                         $options = $prodi->degrees()->pluck('name')->toArray();
-                     }
-                 }
-             }
         }
 
         // Ambil jawaban sementara dari session
@@ -129,6 +123,7 @@ class SurveyController extends Controller
 
         $request->validate([
             'answer' => 'required', // Bisa string atau array (checkbox)
+            'other_answer' => 'nullable|string|max:255',
         ]);
 
         $questions = Question::orderBy('id')->get();
@@ -138,9 +133,33 @@ class SurveyController extends Controller
         
         $answerValue = $request->answer;
         
-        // Jika array (checkbox), gabungkan jadi string koma
+        // Handle "Lainnya" text input
+        $otherAnswerInput = $request->other_answer;
+        
         if (is_array($answerValue)) {
+            // Checkbox logic
+            // Check if "Lainnya" is selected
+            if (in_array('Lainnya', $answerValue)) {
+                 // Remove "Lainnya" from array
+                 $answerValue = array_diff($answerValue, ['Lainnya']);
+                 // Add the custom text if provided
+                 if (!empty($otherAnswerInput)) {
+                     $answerValue[] = $otherAnswerInput;
+                 } else {
+                     // If they checked "Lainnya" but didn't type anything, maybe keep "Lainnya" or fail?
+                     // Let's keep "Lainnya" if empty to be safe, or just ignore.
+                     // Based on validation plan, we enforce text in frontend.
+                     // Here we'll append "Lainnya: [Text]" or just [Text].
+                     // User prompt implies standard "Lainnya" behavior. 
+                     // Let's just store the text directly as an option.
+                 }
+            }
             $answerValue = implode(', ', $answerValue);
+        } else {
+            // Radio logic
+            if ($answerValue === 'Lainnya' && !empty($otherAnswerInput)) {
+                $answerValue = $otherAnswerInput;
+            }
         }
 
         // Simpan ke session (format: question_id => answer)
