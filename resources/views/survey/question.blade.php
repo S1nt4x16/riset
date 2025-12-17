@@ -15,6 +15,13 @@
     </div>
 
     <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2 leading-snug">{{ $question->text }}</h2>
+
+    @if(session('error'))
+        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl shadow-sm text-red-700">
+            {{ session('error') }}
+        </div>
+    @endif
+
     @if($question->description)
         <p class="text-gray-500 mb-8">{{ $question->description }}</p>
     @else
@@ -35,7 +42,7 @@
         </div>
     </div>
 
-    <form id="survey-form" action="{{ route('survey.temp.store', $currentStepEncrypted) }}" method="POST" novalidate>
+    <form id="survey-form" action="{{ route('survey.temp.store', $currentStepHash) }}" method="POST" novalidate>
         @csrf
         <div class="space-y-5">
             {{-- RADIO BUTTON --}}
@@ -145,8 +152,8 @@
         </div>
 
         <div class="flex justify-between items-center mt-20 pt-10 border-t border-gray-100 mt-4 pt-4">
-            @if ($prevStepEncrypted)
-                <a href="{{ route('survey.question', $prevStepEncrypted) }}" 
+            @if ($prevStepHash)
+                <a href="{{ route('survey.question', $prevStepHash) }}" 
                    class="flex items-center text-gray-500 hover:text-teal-600 font-medium px-4 py-3 rounded-xl hover:bg-teal-50 transition-colors group">
                     Sebelumnya
                 </a>
