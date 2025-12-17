@@ -14,7 +14,12 @@
         <div class="bg-teal-500 h-2 rounded-full transition-all duration-500 ease-out" style="width: {{ ($number / $total) * 100 }}%"></div>
     </div>
 
-    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-8 leading-snug">{{ $question->text }}</h2>
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2 leading-snug">{{ $question->text }}</h2>
+    @if($question->description)
+        <p class="text-gray-500 mb-8">{{ $question->description }}</p>
+    @else
+        <div class="mb-8"></div>
+    @endif
     
     {{-- Custom Validation Alert --}}
     <div id="validation-alert" class="hidden mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl shadow-sm transition-all duration-300 transform origin-top">
@@ -57,21 +62,36 @@
                     $selectedAnswers = isset($currentAnswer) ? explode(', ', $currentAnswer) : [];
                 @endphp
                 @foreach($options as $option)
-                    <label class="group flex mb-4 items-center gap-6 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-teal-500 hover:bg-teal-50 {{ in_array($option, $selectedAnswers) ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200' }}">
-                         <div class="relative flex items-center justify-center flex-shrink-0 w-6 h-6">
-                            <input 
-                                type="checkbox" 
-                                name="answer[]" 
-                                value="{{ $option }}"
-                                {{ in_array($option, $selectedAnswers) ? 'checked' : '' }}
-                                class="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md checked:border-teal-600 checked:bg-teal-600 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
-                            >
-                            <svg class="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <span class="text-lg text-gray-700 font-medium group-hover:text-teal-800">{{ $option }}</span>
-                    </label>
+                    <div class="mb-4">
+                        <label class="group flex items-center gap-6 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-teal-500 hover:bg-teal-50 {{ in_array($option, $selectedAnswers) ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200' }}">
+                             <div class="relative flex items-center justify-center flex-shrink-0 w-6 h-6">
+                                <input 
+                                    type="checkbox" 
+                                    name="answer[]" 
+                                    value="{{ $option }}"
+                                    {{ in_array($option, $selectedAnswers) ? 'checked' : '' }}
+                                    class="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md checked:border-teal-600 checked:bg-teal-600 focus:ring-offset-2 focus:ring-teal-500 transition-colors checkbox-option"
+                                    data-is-other="{{ $option === 'Lainnya' ? 'true' : 'false' }}"
+                                >
+                                <svg class="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-lg text-gray-700 font-medium group-hover:text-teal-800">{{ $option }}</span>
+                        </label>
+                        
+                        @if($option === 'Lainnya')
+                            <div id="other-input-container" class="hidden ml-12 mt-2">
+                                <input 
+                                    type="text" 
+                                    name="other_answer" 
+                                    id="other-answer-input"
+                                    placeholder="Silakan tulis di sini..."
+                                    class="w-full text-lg border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-teal-500 focus:ring-teal-500 transition-colors"
+                                >
+                            </div>
+                        @endif
+                    </div>
                 @endforeach
 
             {{-- TEXT INPUT --}}
@@ -147,6 +167,31 @@
         const form = document.getElementById('survey-form');
         const alertBox = document.getElementById('validation-alert');
         const alertMessage = document.getElementById('validation-message');
+        
+        // Handle "Lainnya" toggle
+        const checkboxes = document.querySelectorAll('.checkbox-option');
+        const otherInputContainer = document.getElementById('other-input-container');
+        const otherInput = document.getElementById('other-answer-input');
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if (this.dataset.isOther === 'true') {
+                    if (this.checked) {
+                        otherInputContainer.classList.remove('hidden');
+                        otherInput.focus();
+                    } else {
+                        otherInputContainer.classList.add('hidden');
+                        otherInput.value = ''; // Clear value when unchecked
+                    }
+                }
+            });
+        });
+
+        // Initial check for 'Lainnya' on load (if validation failed and returned)
+        const otherCheckbox = Array.from(checkboxes).find(cb => cb.dataset.isOther === 'true');
+        if (otherCheckbox && otherCheckbox.checked) {
+            otherInputContainer.classList.remove('hidden');
+        }
 
         form.addEventListener('submit', function(e) {
             let isValid = false;
@@ -156,7 +201,7 @@
             // Get all inputs
             const radios = form.querySelectorAll('input[type="radio"]');
             const checkboxes = form.querySelectorAll('input[type="checkbox"]');
-            const textInputs = form.querySelectorAll('input[type="text"], input[type="number"]');
+            const textInputs = form.querySelectorAll('input[type="text"]:not(#other-answer-input), input[type="number"]');
             const selects = form.querySelectorAll('select');
 
             // Check Radio
@@ -170,10 +215,22 @@
             }
             // Check Checkbox
             else if (checkboxes.length > 0) {
+                let isOtherChecked = false;
                 for (const c of checkboxes) {
                     if (c.checked) {
                         isValid = true;
-                        break;
+                        if (c.dataset.isOther === 'true') {
+                            isOtherChecked = true;
+                        }
+                    }
+                }
+                
+                // If options selected but includes 'Other', enforce text input
+                if (isValid && isOtherChecked) {
+                    if (!otherInput.value.trim()) {
+                        isValid = false;
+                        errorMessage = "Harap isi bagian 'Lainnya' dengan keterangan.";
+                        isSpecificError = true;
                     }
                 }
             }
@@ -190,7 +247,7 @@
                                 isValid = false;
                                 errorMessage = "Validasi Gagal: Nilai IPK tidak boleh lebih dari " + max;
                                 isSpecificError = true;
-                                break; // Stop checking and show error immediately
+                                break; 
                             } else if (val < 0) {
                                 isValid = false;
                                 errorMessage = "Validasi Gagal: Nilai tidak boleh negatif";
@@ -219,10 +276,8 @@
                 e.preventDefault();
                 
                 if (isSpecificError) {
-                    // Use native alert for specific data validation errors as requested
                     alert(errorMessage);
                 } else {
-                    // Use custom UI for generic "required" field error
                     alertMessage.textContent = errorMessage;
                     alertBox.classList.remove('hidden');
                     alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
