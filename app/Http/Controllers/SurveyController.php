@@ -11,6 +11,7 @@ use App\Models\Degree;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Crypt;
+use Vinkla\Hashids\Facades\Hashids;
 
 class SurveyController extends Controller
 {
@@ -31,25 +32,32 @@ class SurveyController extends Controller
         $question = $questions[0];
         $number = 1;
 
+
         // Kosongkan session jawaban setiap kali mulai survei baru
         session()->forget('survey_answers');
         session()->forget('answers'); // Make sure we clear both keys if any
 
-        return view('survey.welcome', compact('question', 'number', 'total'));
+        $startHash = Hashids::encode(1);
+
+        return view('survey.welcome', compact('question', 'number', 'total', 'startHash'));
     }
 
     // Petunjuk survei
     public function instructions()
     {
-        return view('survey.instructions');
+        $startHash = Hashids::encode(1);
+        return view('survey.instructions', compact('startHash'));
     }
 
     // Tampilkan pertanyaan per step
-    public function showQuestion($step_encrypted)
+    public function showQuestion($step_hash)
     {
         try {
-            $step = Crypt::decryptString(hex2bin($step_encrypted));
-            $step = (int) $step;
+            $decoded = Hashids::decode($step_hash);
+            if (empty($decoded)) {
+                return redirect()->route('survey.welcome');
+            }
+            $step = $decoded[0];
         } catch (\Exception $e) {
             return redirect()->route('survey.welcome');
         }
@@ -64,6 +72,27 @@ class SurveyController extends Controller
         if ($step < 1 || $step > $total) {
             return redirect()->route('survey.thanks');
         }
+
+        // --- Prevent Skipping Question Logic ---
+        $savedAnswers = session('answers', []);
+        $maxAllowedStep = 1;
+
+        foreach ($questions as $index => $q) {
+            if (isset($savedAnswers[$q->id])) {
+                $maxAllowedStep = $index + 2;
+            } else {
+                break;
+            }
+        }
+
+        if ($step > $maxAllowedStep) {
+            $targetStep = min($maxAllowedStep, $total);
+            $targetHash = Hashids::encode($targetStep);
+
+            return redirect()->route('survey.question', ['step' => $targetHash])
+                             ->with('error', 'Anda tidak dapat melewati pertanyaan. Harap isi secara berurutan.');
+        }
+        // ---------------------------------------
 
         $question = $questions[$step - 1];
         $options = $question->options ?? []; // Ambil dari database, default array kosong
@@ -98,7 +127,7 @@ class SurveyController extends Controller
         $currentAnswer = $savedAnswers[$question->id] ?? null;
 
         // Prepare previous step encrypted if needed
-        $prevStepEncrypted = ($step > 1) ? bin2hex(Crypt::encryptString($step - 1)) : null;
+        $prevStepHash = ($step > 1) ? Hashids::encode($step - 1) : null;
 
         return view('survey.question', [
             'question' => $question,
@@ -106,17 +135,20 @@ class SurveyController extends Controller
             'total'    => $total,
             'options'  => $options,
             'currentAnswer' => $currentAnswer,
-            'currentStepEncrypted' => $step_encrypted,
-            'prevStepEncrypted' => $prevStepEncrypted,
+            'currentStepHash' => $step_hash,
+            'prevStepHash' => $prevStepHash,
         ]);
     }
 
     // Simpan jawaban sementara (belum ke DB)
-    public function saveTempAnswer(Request $request, $step_encrypted)
+    public function saveTempAnswer(Request $request, $step_hash)
     {
         try {
-            $step = Crypt::decryptString(hex2bin($step_encrypted));
-            $step = (int) $step;
+            $decoded = Hashids::decode($step_hash);
+            if (empty($decoded)) {
+                return redirect()->route('survey.welcome');
+            }
+            $step = $decoded[0];
         } catch (\Exception $e) {
             return redirect()->route('survey.welcome');
         }
@@ -171,8 +203,8 @@ class SurveyController extends Controller
         }
 
         // Kalau belum terakhir, lanjut ke pertanyaan berikutnya
-        $nextStepEncrypted = bin2hex(Crypt::encryptString($step + 1));
-        return redirect()->route('survey.question', ['step' => $nextStepEncrypted]);
+        $nextStepHash = Hashids::encode($step + 1);
+        return redirect()->route('survey.question', ['step' => $nextStepHash]);
     }
 
     public function storeAll(Request $request)
