@@ -21,10 +21,15 @@ class QuestionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'text' => 'required|string|max:255',
+            'text' => 'required|string',
+            'type' => 'required|string|in:text,number,radio,checkbox,select',
+            'section' => 'nullable|string|max:10',
+            'key' => 'nullable|string|unique:questions,key',
+            'description' => 'nullable|string',
+            'options' => 'nullable|array',
         ]);
 
-        Question::create($request->only('text'));
+        Question::create($request->all());
 
         return redirect()->route('admin.questions.index')->with('success', 'Pertanyaan berhasil ditambahkan.');
     }
@@ -42,10 +47,15 @@ class QuestionController extends Controller
     public function update(Request $request, Question $question)
     {
         $request->validate([
-            'text' => 'required|string|max:255',
+            'text' => 'required|string',
+            'type' => 'required|string|in:text,number,radio,checkbox,select',
+            'section' => 'nullable|string|max:10',
+            'key' => 'nullable|string|unique:questions,key,' . $question->id,
+            'description' => 'nullable|string',
+            'options' => 'nullable|array',
         ]);
 
-        $question->update($request->only('text'));
+        $question->update($request->all());
 
         return redirect()->route('admin.questions.index')->with('success', 'Pertanyaan berhasil diperbarui.');
     }
