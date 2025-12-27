@@ -52,6 +52,9 @@
             <button type="button" id="add-option" class="text-sm bg-gray-100 text-teal-700 px-3 py-1 rounded hover:bg-gray-200 font-medium">
                 + Tambah Pilihan
             </button>
+            <button type="button" id="add-other-option" class="text-sm bg-orange-50 text-orange-700 px-3 py-1 rounded hover:bg-orange-100 font-medium ml-2">
+                + Tambah "Lainnya"
+            </button>
         </div>
 
         <div class="pt-4">
@@ -66,6 +69,7 @@
         const optionsContainer = document.getElementById('options-container');
         const optionsList = document.getElementById('options-list');
         const addOptionBtn = document.getElementById('add-option');
+        const addOtherBtn = document.getElementById('add-other-option');
 
         function toggleOptions() {
             const needsOptions = ['radio', 'checkbox', 'select'].includes(typeSelect.value);
@@ -76,7 +80,7 @@
             const div = document.createElement('div');
             div.className = 'flex items-center gap-2';
             div.innerHTML = `
-                <input type="text" name="options[]" value="${value}" class="flex-1 border border-gray-300 rounded-lg p-2 focus:ring-teal-500" placeholder="Pilihan...">
+                <input type="text" name="options[]" value="${value}" class="flex-1 border border-gray-300 rounded-lg p-2 mb-2 focus:ring-teal-500" placeholder="Pilihan...">
                 <button type="button" class="text-red-500 hover:text-red-700 font-bold px-2" onclick="this.parentElement.remove()">×</button>
             `;
             optionsList.appendChild(div);
@@ -84,6 +88,7 @@
 
         typeSelect.addEventListener('change', toggleOptions);
         addOptionBtn.addEventListener('click', () => createOptionInput());
+        addOtherBtn.addEventListener('click', () => createOptionInput('Lainnya'));
 
         // Inisialisasi
         toggleOptions();

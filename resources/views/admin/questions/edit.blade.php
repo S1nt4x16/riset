@@ -60,6 +60,9 @@
             <button type="button" id="add-option" class="text-sm bg-gray-100 text-teal-700 px-3 py-1 rounded hover:bg-gray-200 font-medium">
                 + Tambah Pilihan
             </button>
+            <button type="button" id="add-other-option" class="text-sm bg-orange-50 text-orange-700 px-3 py-1 rounded hover:bg-orange-100 font-medium ml-2">
+                + Tambah "Lainnya"
+            </button>
         </div>
 
         <div class="pt-4 flex gap-4">
@@ -77,6 +80,7 @@
         const optionsContainer = document.getElementById('options-container');
         const optionsList = document.getElementById('options-list');
         const addOptionBtn = document.getElementById('add-option');
+        const addOtherBtn = document.getElementById('add-other-option');
 
         function toggleOptions() {
             const needsOptions = ['radio', 'checkbox', 'select'].includes(typeSelect.value);
@@ -95,6 +99,7 @@
 
         typeSelect.addEventListener('change', toggleOptions);
         addOptionBtn.addEventListener('click', () => createOptionInput());
+        addOtherBtn.addEventListener('click', () => createOptionInput('Lainnya'));
 
         // Inisialisasi
         toggleOptions();
