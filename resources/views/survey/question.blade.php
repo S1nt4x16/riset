@@ -46,37 +46,66 @@
         @csrf
         <div class="space-y-5">
             {{-- RADIO BUTTON --}}
+            {{-- RADIO BUTTON --}}
             @if($question->type === 'radio')
+                @php
+                    $isOtherAnswer = isset($currentAnswer) && !in_array($currentAnswer, $options);
+                @endphp
                 @foreach($options as $option)
-                    <label class="group flex items-center gap-6 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-teal-500 hover:bg-teal-50 {{ isset($currentAnswer) && $currentAnswer == $option ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200' }} mb-4">
-                        <div class="relative flex items-center justify-center flex-shrink-0 w-6 h-6">
-                            <input 
-                                type="radio" 
-                                name="answer" 
-                                value="{{ $option }}"
-                                {{ isset($currentAnswer) && $currentAnswer == $option ? 'checked' : '' }}
-                                class="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-full checked:border-teal-600 checked:bg-teal-600 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
-                            >
-                            <div class="absolute w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                        </div>
-                        <span class="text-lg text-gray-700 font-medium group-hover:text-teal-800">{{ $option }}</span>
-                    </label>
+                    @php
+                        $isChecked = (isset($currentAnswer) && $currentAnswer == $option) || ($option === 'Lainnya' && $isOtherAnswer);
+                    @endphp
+                    <div class="mb-4">
+                        <label class="group flex items-center gap-6 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-teal-500 hover:bg-teal-50 {{ $isChecked ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200' }}">
+                            <div class="relative flex items-center justify-center flex-shrink-0 w-6 h-6">
+                                <input 
+                                    type="radio" 
+                                    name="answer" 
+                                    value="{{ $option }}"
+                                    {{ $isChecked ? 'checked' : '' }}
+                                    class="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-full checked:border-teal-600 checked:bg-teal-600 focus:ring-offset-2 focus:ring-teal-500 transition-colors radio-option"
+                                    data-is-other="{{ $option === 'Lainnya' ? 'true' : 'false' }}"
+                                >
+                                <div class="absolute w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                            </div>
+                            <span class="text-lg text-gray-700 font-medium group-hover:text-teal-800">{{ $option }}</span>
+                        </label>
+
+                        @if($option === 'Lainnya')
+                            <div id="other-input-container" class="{{ $isOtherAnswer ? '' : 'hidden' }} ml-12 mt-2">
+                                <input 
+                                    type="text" 
+                                    name="other_answer" 
+                                    id="other-answer-input"
+                                    placeholder="Silakan tulis di sini..."
+                                    value="{{ $isOtherAnswer ? $currentAnswer : '' }}"
+                                    class="w-full text-lg border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-teal-500 focus:ring-teal-500 transition-colors"
+                                >
+                            </div>
+                        @endif
+                    </div>
                 @endforeach
 
             {{-- CHECKBOX --}}
             @elseif($question->type === 'checkbox')
                 @php 
                     $selectedAnswers = isset($currentAnswer) ? explode(', ', $currentAnswer) : [];
+                    $otherAnswers = array_diff($selectedAnswers, $options);
+                    $hasOther = !empty($otherAnswers);
+                    $otherValue = implode(', ', $otherAnswers);
                 @endphp
                 @foreach($options as $option)
+                    @php
+                        $isChecked = in_array($option, $selectedAnswers) || ($option === 'Lainnya' && $hasOther);
+                    @endphp
                     <div class="mb-4">
-                        <label class="group flex items-center gap-6 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-teal-500 hover:bg-teal-50 {{ in_array($option, $selectedAnswers) ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200' }}">
+                        <label class="group flex items-center gap-6 p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:border-teal-500 hover:bg-teal-50 {{ $isChecked ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200' }}">
                              <div class="relative flex items-center justify-center flex-shrink-0 w-6 h-6">
                                 <input 
                                     type="checkbox" 
                                     name="answer[]" 
                                     value="{{ $option }}"
-                                    {{ in_array($option, $selectedAnswers) ? 'checked' : '' }}
+                                    {{ $isChecked ? 'checked' : '' }}
                                     class="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md checked:border-teal-600 checked:bg-teal-600 focus:ring-offset-2 focus:ring-teal-500 transition-colors checkbox-option"
                                     data-is-other="{{ $option === 'Lainnya' ? 'true' : 'false' }}"
                                 >
@@ -88,12 +117,13 @@
                         </label>
                         
                         @if($option === 'Lainnya')
-                            <div id="other-input-container" class="hidden ml-12 mt-2">
+                            <div id="other-input-container" class="{{ $hasOther ? '' : 'hidden' }} ml-12 mt-2">
                                 <input 
                                     type="text" 
                                     name="other_answer" 
                                     id="other-answer-input"
                                     placeholder="Silakan tulis di sini..."
+                                    value="{{ $otherValue }}"
                                     class="w-full text-lg border-2 border-gray-300 rounded-xl px-4 py-3 focus:border-teal-500 focus:ring-teal-500 transition-colors"
                                 >
                             </div>
@@ -177,28 +207,33 @@
         
         // Handle "Lainnya" toggle
         const checkboxes = document.querySelectorAll('.checkbox-option');
+        const radios = document.querySelectorAll('.radio-option');
         const otherInputContainer = document.getElementById('other-input-container');
         const otherInput = document.getElementById('other-answer-input');
 
+        function toggleOtherDisplay() {
+            const otherCbSelected = Array.from(checkboxes).some(cb => cb.dataset.isOther === 'true' && cb.checked);
+            const otherRadioSelected = Array.from(radios).some(r => r.dataset.isOther === 'true' && r.checked);
+
+            if (otherCbSelected || otherRadioSelected) {
+                otherInputContainer?.classList.remove('hidden');
+                // Don't auto-focus on load as it might be annoying, but focus on click
+            } else {
+                otherInputContainer?.classList.add('hidden');
+                if (otherInput) otherInput.value = '';
+            }
+        }
+
         checkboxes.forEach(cb => {
-            cb.addEventListener('change', function() {
-                if (this.dataset.isOther === 'true') {
-                    if (this.checked) {
-                        otherInputContainer.classList.remove('hidden');
-                        otherInput.focus();
-                    } else {
-                        otherInputContainer.classList.add('hidden');
-                        otherInput.value = ''; // Clear value when unchecked
-                    }
-                }
-            });
+            cb.addEventListener('change', toggleOtherDisplay);
+        });
+
+        radios.forEach(radio => {
+            radio.addEventListener('change', toggleOtherDisplay);
         });
 
         // Initial check for 'Lainnya' on load (if validation failed and returned)
-        const otherCheckbox = Array.from(checkboxes).find(cb => cb.dataset.isOther === 'true');
-        if (otherCheckbox && otherCheckbox.checked) {
-            otherInputContainer.classList.remove('hidden');
-        }
+        toggleOtherDisplay();
 
         form.addEventListener('submit', function(e) {
             let isValid = false;
@@ -213,10 +248,22 @@
 
             // Check Radio
             if (radios.length > 0) {
+                let isOtherChecked = false;
                 for (const r of radios) {
                     if (r.checked) {
                         isValid = true;
+                        if (r.dataset.isOther === 'true') {
+                            isOtherChecked = true;
+                        }
                         break;
+                    }
+                }
+
+                if (isValid && isOtherChecked) {
+                    if (!otherInput.value.trim()) {
+                        isValid = false;
+                        errorMessage = "Harap isi bagian 'Lainnya' dengan keterangan.";
+                        isSpecificError = true;
                     }
                 }
             }
