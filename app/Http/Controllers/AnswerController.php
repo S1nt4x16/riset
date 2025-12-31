@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class AnswerController extends Controller
 {
+    public function index(Response $response)
+    {
+        return view('admin.answers.index', compact('response'));
+    }
+
     public function create(Response $response)
     {
         $questions = Question::all();
