@@ -32,6 +32,7 @@
                         </td>
                         <td class="p-4 border-b">{{ $question->text }}</td>
                         <td class="p-4 border-b flex gap-2">
+                            <a href="{{ route('admin.questions.show', $question) }}" class="text-teal-600 hover:underline">Detail</a>
                             <a href="{{ route('admin.questions.edit', $question) }}" class="text-blue-600 hover:underline">Edit</a>
                             <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus?')">
                                 @csrf
