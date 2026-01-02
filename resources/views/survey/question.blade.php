@@ -14,7 +14,13 @@
         <div class="bg-teal-500 h-2 rounded-full transition-all duration-500 ease-out" style="width: {{ ($number / $total) * 100 }}%"></div>
     </div>
 
-    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2 leading-snug">{{ $question->text }}</h2>
+    @if($question->section)
+        <span class="inline-block bg-teal-50 text-teal-700 text-xs font-bold px-3 py-1 rounded-lg uppercase mb-3 tracking-wider border border-teal-100">
+            {{ $question->section }}
+        </span>
+    @endif
+
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mt-2 mb-2 leading-snug">{{ $question->text }}</h2>
 
     @if(session('error'))
         <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl shadow-sm text-red-700">

@@ -8,9 +8,16 @@ class Response extends Model
 {
     protected $fillable = ['respondent_code'];
 
+    public function getRouteKeyName()
+    {
+        return 'respondent_code';
+    }
+
     public function answers()
     {
         return $this->hasMany(Answer::class, 'response_id', 'id');
-    }   
+    }
+
+
 
 }

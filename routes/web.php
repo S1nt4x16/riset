@@ -45,6 +45,7 @@ Route::prefix('admin')
         Route::view('/dashboard', 'admin.dashboard')->name('dashboard');
 
         // CRUD Pertanyaan & Respon
+        Route::view('questions/internal_key_help', 'admin.questions.internal_key_help')->name('questions.help');
         Route::resource('questions', QuestionController::class);
         Route::resource('responses', ResponseController::class);
 
