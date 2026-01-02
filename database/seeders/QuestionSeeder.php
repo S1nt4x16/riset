@@ -14,8 +14,10 @@ class QuestionSeeder extends Seeder
         \Schema::enableForeignKeyConstraints();
 
         $questions = [
+            // --- SECTION A: DATA DIRI ---
             // 1. Gender
             [
+                'section' => 'A. Data Diri',
                 'text' => 'Jenis kelamin',
                 'type' => 'radio',
                 'key' => null,
@@ -24,6 +26,7 @@ class QuestionSeeder extends Seeder
             ],
             // 2. Usia
             [
+                'section' => 'A. Data Diri',
                 'text' => 'Usia',
                 'type' => 'number',
                 'key' => null,
@@ -32,6 +35,7 @@ class QuestionSeeder extends Seeder
             ],
             // 3. Fakultas
             [
+                'section' => 'A. Data Diri',
                 'text' => 'Fakultas',
                 'type' => 'select',
                 'key' => 'faculty', // Dynamic options from DB
@@ -40,6 +44,7 @@ class QuestionSeeder extends Seeder
             ],
             // 4. Prodi (Jenjang) - Combined
             [
+                'section' => 'A. Data Diri',
                 'text' => 'Program Studi (Jenjang)',
                 'type' => 'select',
                 'key' => 'prodi_degree', // Special key for combined logic
@@ -48,6 +53,7 @@ class QuestionSeeder extends Seeder
             ],
             // 5. Tahun Belajar
             [
+                'section' => 'A. Data Diri',
                 'text' => 'Tahun belajar',
                 'type' => 'select',
                 'key' => null,
@@ -62,6 +68,7 @@ class QuestionSeeder extends Seeder
             ],
             // 6. IPK
             [
+                'section' => 'A. Data Diri',
                 'text' => 'IPK',
                 'type' => 'number',
                 'key' => null,
@@ -70,6 +77,7 @@ class QuestionSeeder extends Seeder
             ],
             // 7. Tempat Tinggal
             [
+                'section' => 'A. Data Diri',
                 'text' => 'Tempat tinggal',
                 'type' => 'select',
                 'key' => null,
@@ -80,8 +88,11 @@ class QuestionSeeder extends Seeder
                     'Pulang-Pergi (lebih dari 3 km)'
                 ]
             ],
+
+            // --- SECTION B: KESEHATAN & GAYA HIDUP ---
             // 8. Diskriminasi
             [
+                'section' => 'B. Kesehatan & Gaya Hidup',
                 'text' => 'Apakah selama kuliah pernah mengalami diskriminasi?',
                 'type' => 'radio',
                 'key' => null,
@@ -90,6 +101,7 @@ class QuestionSeeder extends Seeder
             ],
             // 9. Olahraga
             [
+                'section' => 'B. Kesehatan & Gaya Hidup',
                 'text' => 'Frekuensi olahraga per pekan?',
                 'type' => 'radio',
                 'key' => null,
@@ -103,6 +115,7 @@ class QuestionSeeder extends Seeder
             ],
             // 10. Tidur
             [
+                'section' => 'B. Kesehatan & Gaya Hidup',
                 'text' => 'Durasi tidur per hari?',
                 'type' => 'radio',
                 'key' => null,
@@ -114,8 +127,11 @@ class QuestionSeeder extends Seeder
                     'Lebih dari 8 jam'
                 ]
             ],
+
+            // --- SECTION C: AKADEMIK & FINANSIAL ---
             // 11. Pengalaman Akademis
             [
+                'section' => 'C. Akademik & Finansial',
                 'text' => 'Pengalaman akademis',
                 'type' => 'radio',
                 'key' => null,
@@ -130,6 +146,7 @@ class QuestionSeeder extends Seeder
             ],
             // 12. Beban Akademis
             [
+                'section' => 'C. Akademik & Finansial',
                 'text' => 'Beban Akademis',
                 'type' => 'radio',
                 'key' => null,
@@ -144,6 +161,7 @@ class QuestionSeeder extends Seeder
             ],
             // 13. Tekanan Akademis
             [
+                'section' => 'C. Akademik & Finansial',
                 'text' => 'Tekanan akademis',
                 'type' => 'radio',
                 'key' => null,
@@ -157,6 +175,7 @@ class QuestionSeeder extends Seeder
             ],
             // 14. Kekhawatiran Finansial
             [
+                'section' => 'C. Akademik & Finansial',
                 'text' => 'Kekhawatiran finansial',
                 'type' => 'radio',
                 'key' => null,
@@ -168,8 +187,11 @@ class QuestionSeeder extends Seeder
                     'Sangat aman'
                 ]
             ],
+
+            // --- SECTION D: KESEHATAN MENTAL ---
             // 15. Hubungan Sosial
             [
+                'section' => 'D. Kesehatan Mental',
                 'text' => 'Hubungan sosial antara keluarga dan pertemanan',
                 'type' => 'radio',
                 'key' => null,
@@ -184,6 +206,7 @@ class QuestionSeeder extends Seeder
             ],
             // 16. Depresi
             [
+                'section' => 'D. Kesehatan Mental',
                 'text' => 'Depresi',
                 'type' => 'radio',
                 'key' => null,
@@ -197,6 +220,7 @@ class QuestionSeeder extends Seeder
             ],
             // 17. Anxiety
             [
+                'section' => 'D. Kesehatan Mental',
                 'text' => 'Anxiety',
                 'type' => 'radio',
                 'key' => null,
@@ -210,6 +234,7 @@ class QuestionSeeder extends Seeder
             ],
             // 18. Isolation
             [
+                'section' => 'D. Kesehatan Mental',
                 'text' => 'Isolation',
                 'type' => 'radio',
                 'key' => null,
@@ -223,6 +248,7 @@ class QuestionSeeder extends Seeder
             ],
             // 19. Future Insecurity
             [
+                'section' => 'D. Kesehatan Mental',
                 'text' => 'Future Insecurity',
                 'type' => 'radio',
                 'key' => null,
@@ -235,6 +261,7 @@ class QuestionSeeder extends Seeder
             ],
             // 20. Stress Release (Multi-select)
             [
+                'section' => 'D. Kesehatan Mental',
                 'text' => 'Stress Release (Boleh pilih lebih dari satu)',
                 'type' => 'checkbox',
                 'key' => null,

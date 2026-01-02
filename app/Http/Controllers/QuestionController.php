@@ -10,12 +10,14 @@ class QuestionController extends Controller
     public function index()
     {
         $questions = Question::all();
-        return view('admin.questions.index', compact('questions'));
+        $sections = Question::select('section')->distinct()->whereNotNull('section')->pluck('section');
+        return view('admin.questions.index', compact('questions', 'sections'));
     }
 
     public function create()
     {
-        return view('admin.questions.create');
+        $sections = Question::select('section')->distinct()->whereNotNull('section')->pluck('section');
+        return view('admin.questions.create', compact('sections'));
     }
 
     public function store(Request $request)
@@ -23,7 +25,7 @@ class QuestionController extends Controller
         $request->validate([
             'text' => 'required|string',
             'type' => 'required|string|in:text,number,radio,checkbox,select',
-            'section' => 'nullable|string|max:10',
+            'section' => 'nullable|string|max:255',
             'key' => 'nullable|string|unique:questions,key',
             'description' => 'nullable|string',
             'options' => 'nullable|array',
@@ -41,7 +43,8 @@ class QuestionController extends Controller
 
     public function edit(Question $question)
     {
-        return view('admin.questions.edit', compact('question'));
+        $sections = Question::select('section')->distinct()->whereNotNull('section')->pluck('section');
+        return view('admin.questions.edit', compact('question', 'sections'));
     }
 
     public function update(Request $request, Question $question)
@@ -49,7 +52,7 @@ class QuestionController extends Controller
         $request->validate([
             'text' => 'required|string',
             'type' => 'required|string|in:text,number,radio,checkbox,select',
-            'section' => 'nullable|string|max:10',
+            'section' => 'nullable|string|max:255',
             'key' => 'nullable|string|unique:questions,key,' . $question->id,
             'description' => 'nullable|string',
             'options' => 'nullable|array',
